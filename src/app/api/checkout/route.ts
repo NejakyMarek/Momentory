@@ -1,15 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { priceOf, VARIANT_LABEL, AlbumVariant, PageCount } from "@/lib/products";
+import {
+  priceOf,
+  VARIANT_LABEL,
+  type AlbumVariant,
+  type PageCount,
+} from "@/lib/products";
 
-type CartItem = { variant: AlbumVariant; pages: PageCount; quantity: number; };
+type CartItem = { variant: AlbumVariant; pages: PageCount; quantity: number };
 
 export async function POST(req: NextRequest) {
   try {
     const { items } = (await req.json()) as { items: CartItem[] };
-    if (!items?.length) return NextResponse.json({ error: "Empty cart" }, { status: 400 });
+    if (!items?.length) {
+      return NextResponse.json({ error: "Empty cart" }, { status: 400 });
+    }
 
-    const line_items = items.map(it => ({
+    const line_items = items.map((it) => ({
       quantity: it.quantity,
       price_data: {
         currency: "eur",
@@ -25,7 +32,10 @@ export async function POST(req: NextRequest) {
       line_items,
       success_url: `${baseUrl}/checkout/success`,
       cancel_url: `${baseUrl}/checkout/cancel`,
+<<<<<<< Updated upstream
       automatic_tax: { enabled: false },
+=======
+>>>>>>> Stashed changes
     });
 
     return NextResponse.json({ url: session.url });

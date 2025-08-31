@@ -10,7 +10,8 @@ export async function startCheckout(items: CartItem[]) {
   });
 
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || "Checkout failed");
+  if (!res.ok) throw new Error((data as any).error || `HTTP ${res.status}`);
+  if (!("url" in data) || !data.url) throw new Error("Server nevrátil URL na checkout.");
 
-  if (data.url) window.location.href = data.url as string;
+  window.location.href = data.url as string;
 }
