@@ -32,10 +32,6 @@ export async function POST(req: NextRequest) {
       line_items,
       success_url: `${baseUrl}/checkout/success`,
       cancel_url: `${baseUrl}/checkout/cancel`,
-<<<<<<< Updated upstream
-      automatic_tax: { enabled: false },
-=======
->>>>>>> Stashed changes
     });
 
     return NextResponse.json({ url: session.url });

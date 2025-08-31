@@ -9,9 +9,9 @@ export async function startCheckout(items: CartItem[]) {
     body: JSON.stringify({ items }),
   });
 
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as any).error || `HTTP ${res.status}`);
-  if (!("url" in data) || !data.url) throw new Error("Server nevrátil URL na checkout.");
+  const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
 
-  window.location.href = data.url as string;
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  if (!data.url) throw new Error("Server nevrátil URL na checkout.");
+  window.location.href = data.url;
 }
