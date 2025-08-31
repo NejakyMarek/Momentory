@@ -83,6 +83,11 @@ export default function BuilderPage() {
       {/* Upload fotiek */}
       <Uploader onChange={setPhotos} />
 
+      <div style={{marginTop:8, fontSize:12, opacity:.7}}>
+        Debug: fotiek = {photos.length}
+      </div>
+
+
       {/* Náhľady */}
       {photos.length > 0 && (
         <div style={{ marginTop: 16 }}>
