@@ -19,6 +19,9 @@ export async function POST(req: NextRequest) {
     }));
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    
+    const first = items[0];
+    const variant = first.variant;
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -26,6 +29,10 @@ export async function POST(req: NextRequest) {
       success_url: `${baseUrl}/checkout/success`,
       cancel_url: `${baseUrl}/checkout/cancel`,
       automatic_tax: { enabled: false },
+      metadata: {
+        variant,
+        pages: String(items[0].pages),
+      },
     });
 
     return NextResponse.json({ url: session.url });
