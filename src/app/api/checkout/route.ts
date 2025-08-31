@@ -7,6 +7,9 @@ import {
   type PageCount,
 } from "@/lib/products";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 type CartItem = { variant: AlbumVariant; pages: PageCount; quantity: number };
 
 export async function POST(req: NextRequest) {
