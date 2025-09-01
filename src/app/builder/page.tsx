@@ -120,6 +120,7 @@ export default function BuilderPage() {
           >
             {photos.slice(0, 12).map((url, i) => (
               <Image
+                unoptimized           // ← toto preskočí optimalizáciu aj domain check
                 key={i}
                 src={`${url}-/preview/300x300/-/quality/smart/`}
                 alt={`photo-${i}`}
