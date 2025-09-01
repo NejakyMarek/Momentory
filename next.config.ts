@@ -2,12 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-  remotePatterns: [
-    { protocol: "https", hostname: "**.ucarecdn.com", pathname: "/**" },
-    { protocol: "https", hostname: "**.ucarecdn.net", pathname: "/**" },
-  ],
-},
-
+    remotePatterns: [
+      { protocol: "https", hostname: "*.ucarecdn.net", pathname: "/**" },
+      { protocol: "https", hostname: "*.ucarecdn.com", pathname: "/**" },
+    ],
+  },
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
 };
