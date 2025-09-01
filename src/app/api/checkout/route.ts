@@ -35,7 +35,11 @@ export async function POST(req: NextRequest) {
       line_items,
       success_url: `${baseUrl}/checkout/success`,
       cancel_url: `${baseUrl}/checkout/cancel`,
+      billing_address_collection: "required",
+      shipping_address_collection: { allowed_countries: ["SK", "CZ", "DE", "AT"] },
+      phone_number_collection: { enabled: true },
     });
+
 
     return NextResponse.json({ url: session.url });
   } catch (e) {

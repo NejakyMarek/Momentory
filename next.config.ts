@@ -1,9 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // dočasne – nech build na Verceli nepadá na ESLint/TS
+  images: {
+    remotePatterns: [{ protocol: "https", hostname: "**.ucarecdn.com" }],
+  },
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
 };
-
 export default nextConfig;

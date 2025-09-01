@@ -13,6 +13,7 @@ import {
 } from "@/lib/products";
 import { startCheckout } from "@/lib/checkout";
 import { saveProject } from "@/lib/utils";
+import Image from "next/image";
 
 export default function BuilderPage() {
   const [variant, setVariant] = useState<AlbumVariant>("basic");
@@ -100,11 +101,13 @@ export default function BuilderPage() {
             }}
           >
             {photos.slice(0, 12).map((url, i) => (
-              <img
+              <Image
                 key={i}
                 src={`${url}-/preview/300x300/-/quality/smart/`}
                 alt={`photo-${i}`}
-                style={{ width: "100%", borderRadius: 8 }}
+                width={300}
+                height={300}
+                style={{ width: "100%", height: "auto", borderRadius: 8 }}
               />
             ))}
           </div>
