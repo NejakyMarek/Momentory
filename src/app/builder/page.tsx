@@ -22,19 +22,37 @@ export default function BuilderPage() {
   const price = priceOf(variant, pages);
 
   const handleCheckout = async () => {
-    if (photos.length === 0) {
-      alert('Najprv nahraj aspoň 1 fotku a v okne uploadu stlač "Done".');
-      return;
+  if (photos.length === 0) {
+    alert("Najprv nahraj aspoň 1 fotku a v okne uploadu stlač 'Done'.");
+    return;
+  }
+
+  try {
+    // 1) uložiť projekt (variant, pages, photos)
+    const res = await fetch("/api/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ variant, pages, photos }),
+    });
+
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error("Save failed: " + txt);
     }
-    try {
-      saveProject({ variant, pages, photos });
-      await startCheckout([{ variant, pages, quantity: 1 }]);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      console.error(e);
-      alert("Checkout error: " + msg);
-    }
-  };
+
+    const data: { id?: string; error?: string } = await res.json();
+    const projectId = data.id ?? "";
+
+    // Stripe checkout – pošli projectId v meta
+    await startCheckout([{ variant, pages, quantity: 1 }], { projectId });
+
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error(e);
+    alert("Checkout error: " + msg);
+  }
+};
+
 
   return (
     <main style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
@@ -121,7 +139,6 @@ export default function BuilderPage() {
       <div style={{ marginTop: 16 }}>
         Cena: <b>{(price / 100).toFixed(2)} €</b>
       </div>
-
       <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
         <button onClick={() => alert("Editor pridáme v ďalšom kroku")}>
           Pokračovať do editora

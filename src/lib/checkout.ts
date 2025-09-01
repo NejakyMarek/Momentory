@@ -1,17 +1,15 @@
-import type { AlbumVariant, PageCount } from "@/lib/products";
+// typy si prispôsob, toto je minimum
+type Item = { variant: string; pages: number; quantity: number };
 
-export type CartItem = { variant: AlbumVariant; pages: PageCount; quantity: number };
-
-export async function startCheckout(items: CartItem[]) {
+export async function startCheckout(items: Item[], meta?: Record<string, string>) {
   const res = await fetch("/api/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ items }),
+    body: JSON.stringify({ items, meta }),   // <── posielame meta
   });
 
-  const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
-
-  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-  if (!data.url) throw new Error("Server nevrátil URL na checkout.");
-  window.location.href = data.url;
+  if (!res.ok) throw new Error(await res.text());
+  const { url } = (await res.json()) as { url: string };
+  // presmeruj na Stripe
+  window.location.href = url;
 }
