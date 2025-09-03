@@ -1,21 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { saveProject } from "@/lib/db";
-
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   try {
-    const { variant, pages, photos } = await req.json();
+    const { variant, pages, photos } = await req.json() as {
+      variant: string;
+      pages: number;
+      photos: string[];
+    };
 
-    if (!variant || !pages || !Array.isArray(photos) || photos.length === 0) {
-      return NextResponse.json({ error: "Bad payload" }, { status: 400 });
-    }
+    const id = crypto.randomUUID();
 
-    const id = await saveProject({ variant, pages: Number(pages), photos });
+    await prisma.project.create({
+      data: { id, variant, pages, photos }
+    });
+
     return NextResponse.json({ id });
   } catch (e: any) {
-    console.error("projects POST error:", e);
-    return NextResponse.json({ error: e?.message || "Save failed" }, { status: 500 });
+    console.error(e);
+    return new NextResponse(
+      JSON.stringify({ error: e?.message ?? "Error" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
 }

@@ -1,0 +1,19 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Project {
+  id        String   @id
+  variant   String
+  pages     Int
+  photos    String[]      // ukladáme URL fotiek ako pole stringov
+  status    String   @default("draft")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("projects")
+}

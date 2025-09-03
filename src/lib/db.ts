@@ -1,9 +1,12 @@
-import { sql } from "@vercel/postgres";
-import { randomUUID } from "node:crypto";
+// src/lib/db.ts
+import { createClient } from '@vercel/postgres';
+
+const db = createClient({ connectionString: process.env.POSTGRES_URL! });
+// dôležité: pripojiť sa raz pri štarte
+await db.connect();
 
 export async function ensureSchema() {
-  // pozri sa, či stĺpec photos je JSONB; ak nie, vytvor tabuľku
-  await sql`
+  await db.sql`
     CREATE TABLE IF NOT EXISTS projects (
       id         TEXT PRIMARY KEY,
       variant    TEXT NOT NULL,
@@ -15,20 +18,21 @@ export async function ensureSchema() {
   `;
 }
 
-export async function saveProject(input: {
+type SaveInput = {
   id?: string;
   variant: string;
   pages: number;
   photos: string[];
-}) {
+};
+
+export async function saveProject(input: SaveInput) {
   await ensureSchema();
+  const id = input.id ?? crypto.randomUUID();
 
-  const id = input.id ?? randomUUID();
-  const photos = (input.photos ?? []).map(String).filter(Boolean);
-
-  await sql`
+  // photos uložíme ako JSONB
+  await db.sql`
     INSERT INTO projects (id, variant, pages, photos)
-    VALUES (${id}, ${input.variant}, ${input.pages}, ${photos as any})
+    VALUES (${id}, ${input.variant}, ${input.pages}, ${JSON.stringify(input.photos)}::jsonb)
     ON CONFLICT (id) DO NOTHING;
   `;
 
