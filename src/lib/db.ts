@@ -1,40 +1,33 @@
 // src/lib/db.ts
-import { createClient } from '@vercel/postgres';
+import { prisma } from './prisma';
+import { randomUUID } from 'node:crypto';
 
-const db = createClient({ connectionString: process.env.POSTGRES_URL! });
-// dôležité: pripojiť sa raz pri štarte
-await db.connect();
-
-export async function ensureSchema() {
-  await db.sql`
-    CREATE TABLE IF NOT EXISTS projects (
-      id         TEXT PRIMARY KEY,
-      variant    TEXT NOT NULL,
-      pages      INT  NOT NULL,
-      photos     JSONB NOT NULL,
-      status     TEXT NOT NULL DEFAULT 'draft',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-  `;
-}
-
-type SaveInput = {
+export async function saveProject(input: {
   id?: string;
   variant: string;
   pages: number;
   photos: string[];
-};
+}) {
+  const id = input.id ?? randomUUID();
 
-export async function saveProject(input: SaveInput) {
-  await ensureSchema();
-  const id = input.id ?? crypto.randomUUID();
+  const photos = (input.photos ?? []).map(String).filter(Boolean);
 
-  // photos uložíme ako JSONB
-  await db.sql`
-    INSERT INTO projects (id, variant, pages, photos)
-    VALUES (${id}, ${input.variant}, ${input.pages}, ${JSON.stringify(input.photos)}::jsonb)
-    ON CONFLICT (id) DO NOTHING;
-  `;
+  await prisma.project.upsert({
+    where: { id },
+    update: {
+      variant: input.variant,
+      pages: input.pages,
+      photos,
+      status: 'draft',
+    },
+    create: {
+      id,
+      variant: input.variant,
+      pages: input.pages,
+      photos,
+      status: 'draft',
+    },
+  });
 
   return id;
 }

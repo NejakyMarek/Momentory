@@ -1,71 +1,68 @@
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+// src/app/api/checkout/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { stripe } from '@/lib/stripe'; // máš v src/lib/stripe.ts
+import { priceOf, type AlbumVariant, type PageCount } from '@/lib/products';
 
-import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+export const runtime = 'nodejs'; // Stripe potrebuje Node runtime
+export const dynamic = 'force-dynamic';
 
-// 🔹 čo posiela klient
 type Item = {
-  variant: "cheap" | "basic" | "premium" | "ultra";
-  pages: number;
+  variant: AlbumVariant;
+  pages: PageCount;
   quantity?: number;
 };
 
-// 🔹 jednoduchý serverový cenník (ceny sú v CENTOCH)
-function priceOfServer(variant: Item["variant"], pages: number): number {
-  const base: Record<Item["variant"], number> = {
-    cheap: 3900,    // 39.00 €
-    basic: 7900,    // 79.00 €
-    premium: 14900, // 149.00 €
-    ultra: 39900,   // 399.00 €
-  };
-  const extra: Record<number, number> = {
-    9: 0,
-    16: 2000,  // +20 €
-    24: 4000,  // +40 €
-  };
-  return (base[variant] ?? 7900) + (extra[pages] ?? 0);
-}
+type Body = {
+  items: Item[];
+  meta?: Record<string, string>; // napr. { projectId: '...' }
+};
 
 export async function POST(req: NextRequest) {
   try {
-    const { items, meta } = (await req.json()) as {
-      items: Item[];
-      meta?: Record<string, string>;
-    };
+    const { items, meta }: Body = await req.json();
 
     if (!Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: "Empty cart" }, { status: 400 });
+      return NextResponse.json({ error: 'Empty cart' }, { status: 400 });
     }
 
-    // 🔹 pre Stripe priprav line_items s cenou v centoch
-    const line_items = items.map((it) => ({
-      quantity: it.quantity ?? 1,
-      price_data: {
-        currency: "eur",
-        unit_amount: priceOfServer(it.variant, it.pages), // MUST: integer v centoch
-        product_data: {
-          name: `Album ${it.variant} – ${it.pages} strán`,
+    // prepočítaj položky na Stripe line_items
+    const line_items = items.map((it) => {
+      const amount = priceOf(it.variant, it.pages); // vracia cenu v centoch (integer)
+      if (!Number.isFinite(amount) || amount < 50) {
+        throw new Error(`Bad amount for ${it.variant}/${it.pages}: ${amount}`);
+      }
+      return {
+        quantity: it.quantity ?? 1,
+        price_data: {
+          currency: 'eur',
+          unit_amount: Math.round(amount), // v centoch
+          product_data: {
+            name: `Album ${it.variant} | ${it.pages} strán`,
+          },
         },
-      },
-    }));
+      };
+    });
 
-    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, '') ||
+      'http://localhost:3000';
 
     const session = await stripe.checkout.sessions.create({
-      mode: "payment",
+      mode: 'payment',
       line_items,
       success_url: `${baseUrl}/checkout/success`,
       cancel_url: `${baseUrl}/checkout/cancel`,
-      billing_address_collection: "required",
-      shipping_address_collection: { allowed_countries: ["SK", "CZ", "DE", "AT"] },
+      // sem pridáme projectId (alebo iné meta, keď pošleš)
+      metadata: { ...(meta ?? {}) },
+      billing_address_collection: 'required',
+      shipping_address_collection: { allowed_countries: ['SK', 'CZ', 'DE', 'AT'] },
       phone_number_collection: { enabled: true },
-      metadata: meta ?? {}, // sem príde napr. { projectId }
     });
 
-    return NextResponse.json({ url: session.url });
-  } catch (e: any) {
-    console.error("Checkout error:", e);
-    return NextResponse.json({ error: e?.message || "Checkout failed" }, { status: 500 });
+    return NextResponse.json({ url: session.url }, { status: 200 });
+  } catch (e: unknown) {
+    console.error('Checkout route error:', e);
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

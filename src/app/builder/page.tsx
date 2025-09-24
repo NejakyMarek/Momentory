@@ -1,87 +1,84 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import dynamic from "next/dynamic";
-const Uploader = dynamic(() => import("@/components/Uploader"), { ssr: false });
+import { useState } from 'react';
+import dynamic from 'next/dynamic';
 
+import { startCheckout } from '@/lib/checkout';
 import {
   variantOptions,
   PAGES,
   priceOf,
   type AlbumVariant,
   type PageCount,
-} from "@/lib/products";
-import { startCheckout } from "@/lib/checkout";
-import { saveProject } from "@/lib/utils";
-import Image from "next/image";
+} from '@/lib/products';
+
+// Uploader je len na klientovi
+const Uploader = dynamic(() => import('@/components/Uploader'), { ssr: false });
 
 export default function BuilderPage() {
-  const [variant, setVariant] = useState<AlbumVariant>("basic");
+  // stav
+  const [variant, setVariant] = useState<AlbumVariant>('basic');
   const [pages, setPages] = useState<PageCount>(16);
   const [photos, setPhotos] = useState<string[]>([]);
-  const price = priceOf(variant, pages);
 
+  const price = priceOf(variant, pages); // v centoch
+
+  // klik na "Zaplatiť (test)"
   const handleCheckout = async () => {
-  if (photos.length === 0) {
-    alert("Najprv nahraj aspoň 1 fotku a v okne uploadu stlač 'Done'.");
-    return;
-  }
-
-  try {
-    // 1) uložiť projekt (variant, pages, photos)
-    const res = await fetch("/api/projects", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ variant, pages, photos }),
-    });
-
-    if (!res.ok) {
-      const txt = await res.text();
-      throw new Error("Save failed: " + txt);
+    if (photos.length === 0) {
+      alert('Najprv nahraj aspoň 1 fotku a v okne uploadu stlač "Done".');
+      return;
     }
 
-    const data: { id?: string; error?: string } = await res.json();
-    const projectId = data.id ?? "";
+    try {
+      // 1) uložiť projekt
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variant, pages, photos }),
+      });
 
-    // Stripe checkout – pošli projectId v meta
-    await startCheckout([{ variant, pages, quantity: 1 }], { projectId });
+      if (!res.ok) {
+        // keď server spadne, často vráti HTML. Skúsme z toho vytiahnuť zmysluplnú správu.
+        const isJson = res.headers.get('content-type')?.includes('application/json');
+        const msg = isJson ? (await res.json()).error : await res.text();
+        alert('Save failed: ' + msg);
+        return;
+      }
 
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error(e);
-    alert("Checkout error: " + msg);
-  }
-};
+      const { id } = (await res.json()) as { id: string };
 
+      // 2) Stripe checkout (pošleme aj projectId)
+      await startCheckout({ variant, pages, quantity: 1, projectId: id });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(e);
+      alert('Checkout error: ' + msg);
+    }
+  };
 
   return (
-    <main style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
+    <main style={{ padding: 24, maxWidth: 900, margin: '0 auto' }}>
       <h2>Vyber štýl + počet strán + nahraj fotky</h2>
 
       {/* Výber variantu */}
-      <div
-        style={{
-          display: "grid",
-          gap: 12,
-          gridTemplateColumns: "repeat(2,minmax(0,1fr))",
-          marginTop: 12,
-        }}
-      >
-        {variantOptions().map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => setVariant(opt.value)}
-            style={{
-              padding: 12,
-              border: "1px solid #333",
-              borderRadius: 8,
-              background: variant === opt.value ? "#111" : "#222",
-              color: "#fff",
-            }}
-          >
-            {opt.label}
-          </button>
-        ))}
+      <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(2, minmax(0,1fr))', marginTop: 12 }}>
+              {variantOptions().map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setVariant(opt.value)}
+                style={{
+                  padding: 12,
+                  border: '1px solid #333',
+                  borderRadius: 8,
+                  background: variant === opt.value ? '#111' : '#000',
+                  color: '#fff',
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+
       </div>
 
       {/* Počet strán */}
@@ -100,33 +97,22 @@ export default function BuilderPage() {
       </div>
 
       {/* Upload fotiek */}
-      <Uploader onChange={setPhotos} />
-
-      <div style={{marginTop:8, fontSize:12, opacity:.7}}>
-        Debug: fotiek = {photos.length}
+      <div style={{ marginTop: 16 }}>
+        <Uploader onChange={setPhotos} />
       </div>
 
-
-      {/* Náhľady */}
+      {/* Náhľady – zámerne <img>, nie next/image, nech sa netrápime s doménami */}
       {photos.length > 0 && (
         <div style={{ marginTop: 16 }}>
-          <div style={{ marginBottom: 8 }}>Nahrané fotky: {photos.length}</div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 8,
-            }}
-          >
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
             {photos.slice(0, 12).map((url, i) => (
-              <Image
-                unoptimized           // ← toto preskočí optimalizáciu aj domain check
+              <img
                 key={i}
-                src={`${url}-/preview/300x300/-/quality/smart/`}
-                alt={`photo-${i}`}
+                src={`${url}/-/preview/300x300/-/quality/smart/`}
+                alt={`photo-${i + 1}`}
                 width={300}
                 height={300}
-                style={{ width: "100%", height: "auto", borderRadius: 8 }}
+                style={{ width: '100%', height: 'auto', borderRadius: 8 }}
               />
             ))}
           </div>
@@ -136,15 +122,21 @@ export default function BuilderPage() {
         </div>
       )}
 
-      {/* Cena a akcie */}
+      {/* Cena */}
       <div style={{ marginTop: 16 }}>
         Cena: <b>{(price / 100).toFixed(2)} €</b>
       </div>
-      <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
-        <button onClick={() => alert("Editor pridáme v ďalšom kroku")}>
+
+      {/* Akcie */}
+      <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
+        <button onClick={() => alert('Editor pridáme v ďalšom kroku')}
+                style={{ padding: 12, border: '1px solid #333', borderRadius: 8 }}>
           Pokračovať do editora
         </button>
-        <button onClick={handleCheckout}>Zaplatiť (test)</button>
+        <button onClick={handleCheckout}
+                style={{ padding: 12, border: '1px solid #333', borderRadius: 8 }}>
+          Zaplatiť (test)
+        </button>
       </div>
     </main>
   );

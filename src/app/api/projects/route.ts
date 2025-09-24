@@ -1,26 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+// src/app/api/projects/route.ts
+import { NextResponse } from 'next/server';
+import { saveProject } from '@/lib/db';
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const { variant, pages, photos } = await req.json() as {
-      variant: string;
-      pages: number;
-      photos: string[];
-    };
+    const body = await req.json();
+    const { id, variant, pages, photos } = body ?? {};
 
-    const id = crypto.randomUUID();
+    if (!variant || typeof pages !== 'number' || !Array.isArray(photos)) {
+      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+    }
 
-    await prisma.project.create({
-      data: { id, variant, pages, photos }
-    });
-
-    return NextResponse.json({ id });
+    const savedId = await saveProject({ id, variant, pages, photos });
+    return NextResponse.json({ id: savedId });
   } catch (e: any) {
-    console.error(e);
-    return new NextResponse(
-      JSON.stringify({ error: e?.message ?? "Error" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    console.error('projects POST error', e);
+    return NextResponse.json({ error: e?.message ?? 'Server error' }, { status: 500 });
   }
 }
