@@ -27,7 +27,73 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <div style={{
+          minHeight: '100dvh',
+          display: 'grid',
+          gridTemplateRows: 'auto 1fr auto',
+          background: 'var(--background)'
+        }}>
+          <header style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 10,
+            borderBottom: '1px solid var(--border)',
+            background: 'color-mix(in oklch, var(--background), var(--primary) 3%)'
+          }}>
+            <div style={{
+              maxWidth: 1040,
+              margin: '0 auto',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 20px'
+            }}>
+              <a href="/" style={{
+                fontWeight: 700,
+                color: 'var(--foreground)',
+                textDecoration: 'none'
+              }}>Momentory</a>
+              <nav style={{ display: 'flex', gap: 12 }}>
+                <a href="/builder" style={{
+                  color: 'var(--primary)',
+                  textDecoration: 'none',
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  background: 'color-mix(in oklch, var(--primary), white 85%)',
+                  border: '1px solid var(--border)'
+                }}>Začni tvoriť</a>
+              </nav>
+            </div>
+          </header>
+
+          <main style={{
+            maxWidth: 1040,
+            width: '100%',
+            margin: '0 auto',
+            padding: '20px'
+          }}>
+            {children}
+          </main>
+
+          <footer style={{
+            borderTop: '1px solid var(--border)',
+            background: 'color-mix(in oklch, var(--background), black 2%)'
+          }}>
+            <div style={{
+              maxWidth: 1040,
+              margin: '0 auto',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '16px 20px',
+              fontSize: 14,
+              opacity: 0.8
+            }}>
+              <span>© {new Date().getFullYear()} Momentory</span>
+              <a href="/builder" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Vytvoriť album</a>
+            </div>
+          </footer>
+        </div>
       </body>
     </html>
   );

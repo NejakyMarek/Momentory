@@ -1,1 +1,7 @@
-export default function Page(){ return <main style={{padding:24}}>❌ Platba zrušená.</main>; }
+export default function Page(){
+  return (
+    <div style={{ padding: 24 }}>
+      ❌ Platba zrušená.
+    </div>
+  );
+}

@@ -15,6 +15,9 @@ import {
 // Uploader je len na klientovi
 const Uploader = dynamic(() => import('@/components/Uploader'), { ssr: false });
 
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+
 export default function BuilderPage() {
   // stav
   const [variant, setVariant] = useState<AlbumVariant>('basic');
@@ -58,86 +61,99 @@ export default function BuilderPage() {
   };
 
   return (
-    <main style={{ padding: 24, maxWidth: 900, margin: '0 auto' }}>
-      <h2>Vyber štýl + počet strán + nahraj fotky</h2>
+    <div style={{ display: 'grid', gap: 16 }}>
+      <h2 style={{ fontSize: 28, letterSpacing: -0.2 }}>Vyber štýl + počet strán + nahraj fotky</h2>
 
-      {/* Výber variantu */}
-      <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(2, minmax(0,1fr))', marginTop: 12 }}>
-              {variantOptions().map((opt) => (
-              <button
+      <Card>
+        <CardHeader>
+          <CardTitle>Variant fotoalbumu</CardTitle>
+          <CardDescription>Vyber si vzhľad, ktorý ti sedí.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(2, minmax(0,1fr))' }}>
+            {variantOptions().map((opt) => (
+              <Button
                 key={opt.value}
+                variant={variant === opt.value ? 'default' : 'outline'}
                 onClick={() => setVariant(opt.value)}
-                style={{
-                  padding: 12,
-                  border: '1px solid #333',
-                  borderRadius: 8,
-                  background: variant === opt.value ? '#111' : '#000',
-                  color: '#fff',
-                }}
               >
                 {opt.label}
-              </button>
-            ))}
-
-      </div>
-
-      {/* Počet strán */}
-      <div style={{ marginTop: 16 }}>
-        <label>Počet strán: </label>
-        <select
-          value={String(pages)}
-          onChange={(e) => setPages(Number(e.target.value) as PageCount)}
-        >
-          {PAGES.map((p) => (
-            <option key={p} value={String(p)}>
-              {p}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Upload fotiek */}
-      <div style={{ marginTop: 16 }}>
-        <Uploader onChange={setPhotos} />
-      </div>
-
-      {/* Náhľady – zámerne <img>, nie next/image, nech sa netrápime s doménami */}
-      {photos.length > 0 && (
-        <div style={{ marginTop: 16 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-            {photos.slice(0, 12).map((url, i) => (
-              <img
-                key={i}
-                src={`${url}/-/preview/300x300/-/quality/smart/`}
-                alt={`photo-${i + 1}`}
-                width={300}
-                height={300}
-                style={{ width: '100%', height: 'auto', borderRadius: 8 }}
-              />
+              </Button>
             ))}
           </div>
-          {photos.length > 12 && (
-            <div style={{ marginTop: 8, opacity: 0.7 }}>…a ďalšie</div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Počet strán</CardTitle>
+          <CardDescription>Viac strán = viac spomienok.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <label style={{ display: 'block', marginBottom: 8 }}>Počet strán</label>
+          <select
+            value={String(pages)}
+            onChange={(e) => setPages(Number(e.target.value) as PageCount)}
+            style={{
+              border: '1px solid var(--input)',
+              background: 'transparent',
+              padding: '8px 12px',
+              borderRadius: 8
+            }}
+          >
+            {PAGES.map((p) => (
+              <option key={p} value={String(p)}>
+                {p}
+              </option>
+            ))}
+          </select>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Fotky</CardTitle>
+          <CardDescription>Nahraj aspoň jednu fotku.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Uploader onChange={setPhotos} />
+          {photos.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                {photos.slice(0, 12).map((url, i) => (
+                  <img
+                    key={i}
+                    src={`${url}/-/preview/300x300/-/quality/smart/`}
+                    alt={`photo-${i + 1}`}
+                    width={300}
+                    height={300}
+                    style={{ width: '100%', height: 'auto', borderRadius: 8 }}
+                  />
+                ))}
+              </div>
+              {photos.length > 12 && (
+                <div style={{ marginTop: 8, opacity: 0.7 }}>…a ďalšie</div>
+              )}
+            </div>
           )}
-        </div>
-      )}
+        </CardContent>
+      </Card>
 
-      {/* Cena */}
-      <div style={{ marginTop: 16 }}>
-        Cena: <b>{(price / 100).toFixed(2)} €</b>
-      </div>
-
-      {/* Akcie */}
-      <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
-        <button onClick={() => alert('Editor pridáme v ďalšom kroku')}
-                style={{ padding: 12, border: '1px solid #333', borderRadius: 8 }}>
-          Pokračovať do editora
-        </button>
-        <button onClick={handleCheckout}
-                style={{ padding: 12, border: '1px solid #333', borderRadius: 8 }}>
-          Zaplatiť (test)
-        </button>
-      </div>
-    </main>
+      <Card>
+        <CardContent>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div>
+              Cena: <b>{(price / 100).toFixed(2)} €</b>
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Button variant="outline" onClick={() => alert('Editor pridáme v ďalšom kroku')}>
+                Pokračovať do editora
+              </Button>
+              <Button onClick={handleCheckout}>Zaplatiť (test)</Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
