@@ -23,10 +23,16 @@ export async function startCheckout(
   });
 
   if (!res.ok) {
-    const txt = await res.text();
-    throw new Error('Checkout failed: ' + txt);
+    const contentType = res.headers.get('content-type') || '';
+    const msg = contentType.includes('application/json')
+      ? (await res.json()).error
+      : await res.text();
+    throw new Error('Checkout failed: ' + (msg || res.statusText));
   }
 
   const { url } = await res.json();
+  if (typeof url !== 'string' || url.length < 10) {
+    throw new Error('Invalid checkout URL returned');
+  }
   window.location.href = url;
 }

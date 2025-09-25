@@ -42,7 +42,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-:root {
+ :root {
   --radius: 0.625rem;
   /* Warm, cozy light theme */
   --background: oklch(0.98 0.03 80); /* soft warm ivory */

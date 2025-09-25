@@ -58,7 +58,9 @@ export async function POST(req: NextRequest) {
       shipping_address_collection: { allowed_countries: ['SK', 'CZ', 'DE', 'AT'] },
       phone_number_collection: { enabled: true },
     });
-
+    if (!session.url) {
+      return NextResponse.json({ error: 'Stripe did not return a session URL' }, { status: 502 });
+    }
     return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (e: unknown) {
     console.error('Checkout route error:', e);
