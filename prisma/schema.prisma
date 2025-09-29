@@ -1,19 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-}
-
-generator client {
-  provider = "prisma-client-js"
 }
 
 model Project {
   id        String   @id
   variant   String
   pages     Int
-  photos    String[]      // ukladáme URL fotiek ako pole stringov
+  photos    String[]
   status    String   @default("draft")
   createdAt DateTime @default(now()) @map("created_at")
 
+  // Relations
+  orders    Order[]
+
   @@map("projects")
+}
+
+model Order {
+  id               String   @id @default(cuid())
+  projectId        String
+  stripeSessionId  String   @unique
+  paymentStatus    String
+  amountTotal      Int
+  currency         String
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("orders")
 }
