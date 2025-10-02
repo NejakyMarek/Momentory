@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items,
-      success_url: `${baseUrl}/checkout/success`,
+      // include session_id for recap on success page
+      success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/checkout/cancel`,
       // sem pridáme projectId (alebo iné meta, keď pošleš)
       metadata: { ...(meta ?? {}) },
