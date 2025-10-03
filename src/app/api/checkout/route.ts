@@ -21,6 +21,8 @@ export async function POST(req: NextRequest) {
   try {
     const { items, meta }: Body = await req.json();
 
+    console.log('[checkout] Received request:', { items, meta });
+
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Empty cart' }, { status: 400 });
     }
@@ -47,6 +49,9 @@ export async function POST(req: NextRequest) {
       process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, '') ||
       'http://localhost:3000';
 
+    const sessionMetadata = { ...(meta ?? {}) };
+    console.log('[checkout] Creating Stripe session with metadata:', sessionMetadata);
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items,
@@ -54,10 +59,16 @@ export async function POST(req: NextRequest) {
       success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/checkout/cancel`,
       // sem pridáme projectId (alebo iné meta, keď pošleš)
-      metadata: { ...(meta ?? {}) },
+      metadata: sessionMetadata,
       billing_address_collection: 'required',
       shipping_address_collection: { allowed_countries: ['SK', 'CZ', 'DE', 'AT'] },
       phone_number_collection: { enabled: true },
+    });
+
+    console.log('[checkout] Created Stripe session:', { 
+      id: session.id, 
+      url: session.url,
+      metadata: session.metadata 
     });
     if (!session.url) {
       return NextResponse.json({ error: 'Stripe did not return a session URL' }, { status: 502 });

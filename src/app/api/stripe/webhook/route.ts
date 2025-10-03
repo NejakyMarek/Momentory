@@ -35,9 +35,20 @@ export async function POST(req: NextRequest) {
     const amountTotal = typeof session.amount_total === 'number' ? session.amount_total : 0;
     const currency = (session.currency || 'eur').toLowerCase();
 
+    console.log('[stripe:webhook] Processing checkout.session.completed', {
+      stripeSessionId,
+      projectId,
+      paymentStatus,
+      amountTotal,
+      currency,
+      metadata: session.metadata,
+    });
+
 
     try {
       if (projectId) {
+        console.log('[stripe:webhook] Creating order and updating project', { projectId, stripeSessionId });
+        
         await prisma.$transaction([
           prisma.order.upsert({
             where: { stripeSessionId },
@@ -60,13 +71,17 @@ export async function POST(req: NextRequest) {
             data: { status: 'paid' },
           }),
         ]);
+        
+        console.log('[stripe:webhook] Successfully created order and updated project', { projectId, stripeSessionId });
       } else {
         console.warn('[stripe:webhook] Missing projectId in session.metadata; skipping order creation', {
           stripeSessionId,
+          metadata: session.metadata,
         });
       }
     } catch (dbErr) {
       const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+      console.error('[stripe:webhook] Database error:', { error: msg, stripeSessionId, projectId });
       return NextResponse.json({ error: `DB error: ${msg}` }, { status: 500 });
     }
   }
