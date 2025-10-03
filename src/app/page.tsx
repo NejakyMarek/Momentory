@@ -19,7 +19,7 @@ export default function Home() {
         }}>Vyber štýl, počet strán, nahraj fotky, objednaj.</p>
         <div style={{ marginTop: 20 }}>
           <Button asChild>
-            <Link href="/builder">Začni tvoriť →</Link>
+            <Link href="/configure">Začni tvoriť →</Link>
           </Button>
         </div>
       </section>
